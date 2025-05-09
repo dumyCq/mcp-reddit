@@ -11,8 +11,15 @@ RUN git clone https://github.com/adhikasp/mcp-reddit.git .
 # 安装依赖
 RUN pip install --no-cache-dir -e .
 
-# 暴露8000端口（MCP服务器默认端口）
-EXPOSE 8000
+# 设置环境变量
+ENV PYTHONUNBUFFERED=1
 
-# 启动MCP服务器，使用sse传输方式以便远程访问
-CMD ["python", "-m", "mcp_reddit.reddit_fetcher", "--transport", "sse", "--host", "0.0.0.0", "--port", "8000"]
+# 创建启动脚本，使用环境变量PORT
+RUN echo '#!/bin/bash\n\
+PORT=${PORT:-8000}\n\
+echo "Starting MCP server on port $PORT"\n\
+python -m mcp_reddit.reddit_fetcher --transport sse --host 0.0.0.0 --port $PORT\n\
+' > /app/start.sh && chmod +x /app/start.sh
+
+# 使用启动脚本
+CMD ["/app/start.sh"]
